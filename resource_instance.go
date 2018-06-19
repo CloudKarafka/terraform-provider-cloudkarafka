@@ -20,7 +20,7 @@ func resourceInstance() *schema.Resource {
 			"plan": {
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "Name of the plan, valid options are: lemur, tiger, bunny, rabbit, panda, ape, hippo, lion",
+				Description: "Name of the plan",
 			},
 			"region": {
 				Type:        schema.TypeString,
@@ -33,22 +33,26 @@ func resourceInstance() *schema.Resource {
 				ForceNew:    true,
 				Description: "Dedicated VPC subnet, shouldn't overlap with your current VPC's subnet",
 			},
-			"nodes": {
-				Type:        schema.TypeInt,
-				Default:     1,
-				Optional:    true,
-				Description: "Number of nodes in cluster (plan must support it)",
-			},
-			"rmq_version": {
+			"ca": {
 				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "RabbitMQ version",
+				Computed:    true,
+				Description: "Broker CA",
 			},
-			"url": {
+			"brokers": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Comma separated list of Kafka broker urls",
+			},
+			"username": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Username for accessing the Kafka cluster",
+			},
+			"password": {
 				Type:        schema.TypeString,
 				Computed:    true,
 				Sensitive:   true,
-				Description: "URL of the CloudAMQP instance",
+				Description: "Password for accessing the Kafka cluster",
 			},
 			"apikey": {
 				Type:        schema.TypeString,
@@ -62,7 +66,7 @@ func resourceInstance() *schema.Resource {
 
 func resourceCreate(d *schema.ResourceData, meta interface{}) error {
 	api := meta.(*api.API)
-	keys := []string{"name", "plan", "region", "nodes"}
+	keys := []string{"name", "plan", "region", "vpc_subnet"}
 	params := make(map[string]interface{})
 	for _, k := range keys {
 		if v := d.Get(k); v != nil {
@@ -96,7 +100,7 @@ func resourceRead(d *schema.ResourceData, meta interface{}) error {
 
 func resourceUpdate(d *schema.ResourceData, meta interface{}) error {
 	api := meta.(*api.API)
-	keys := []string{"name", "plan", "nodes"}
+	keys := []string{"name", "plan"}
 	params := make(map[string]interface{})
 	for _, k := range keys {
 		params[k] = d.Get(k)

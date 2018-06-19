@@ -1,8 +1,6 @@
 package main
 
 import (
-	"log"
-
 	"github.com/84codes/go-api/api"
 	"github.com/hashicorp/terraform/helper/schema"
 )
@@ -13,24 +11,23 @@ func Provider() *schema.Provider {
 			"apikey": &schema.Schema{
 				Type:        schema.TypeString,
 				Required:    true,
-				DefaultFunc: schema.EnvDefaultFunc("CLOUDAMQP_APIKEY", nil),
-				Description: "Key used to authentication to the CloudAMQP API",
+				DefaultFunc: schema.EnvDefaultFunc("CLOUDKARAFKA_APIKEY", nil),
+				Description: "Key used to authentication to the CloudKarafka API",
 			},
 			"baseurl": &schema.Schema{
 				Type:        schema.TypeString,
-				Default:     "https://customer.cloudamqp.com",
+				Default:     "https://customer.cloudkarafka.com",
 				Optional:    true,
-				Description: "Base URL to CloudAMQP website",
+				Description: "Base URL to CloudKarafka website",
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"cloudamqp_instance": resourceInstance(),
+			"cloudkarafka_instance": resourceInstance(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
 }
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
-	log.Println(d.Get("baseurl").(string), d.Get("apikey").(string))
 	return api.New(d.Get("baseurl").(string), d.Get("apikey").(string)), nil
 }
