@@ -73,7 +73,8 @@ func resourceCreate(d *schema.ResourceData, meta interface{}) error {
 			params[k] = v
 		}
 	}
-	data, err := api.Create(params)
+
+	data, err := api.CreateInstance(params)
 	if err != nil {
 		return err
 	}
@@ -87,7 +88,7 @@ func resourceCreate(d *schema.ResourceData, meta interface{}) error {
 
 func resourceRead(d *schema.ResourceData, meta interface{}) error {
 	api := meta.(*api.API)
-	data, err := api.Read(d.Id())
+	data, err := api.ReadInstance(d.Id())
 	if err != nil {
 		return err
 	}
@@ -105,10 +106,10 @@ func resourceUpdate(d *schema.ResourceData, meta interface{}) error {
 	for _, k := range keys {
 		params[k] = d.Get(k)
 	}
-	return api.Update(d.Id(), params)
+	return api.UpdateInstance(d.Id(), params)
 }
 
 func resourceDelete(d *schema.ResourceData, meta interface{}) error {
 	api := meta.(*api.API)
-	return api.Delete(d.Id())
+	return api.DeleteInstance(d.Id())
 }

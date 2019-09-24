@@ -9,6 +9,7 @@ build:  ## Build cloudamqp provider
 	go build -o terraform-provider-cloudkarafka
 
 install: build  ## Install cloudamqp provider into terraform plugin directory
+	mkdir -p ~/.terraform.d/plugins/
 	mv terraform-provider-cloudkarafka ~/.terraform.d/plugins/
 
 init: install  ## Run terraform init for local testing
