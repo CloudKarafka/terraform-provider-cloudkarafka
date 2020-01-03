@@ -1,11 +1,18 @@
-package main
+package cloudkarafka
 
 import (
+	"fmt"
+	"log"
+
 	"github.com/84codes/go-api/api"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/terraform"
 )
 
-func Provider() *schema.Provider {
+var version string
+
+func Provider() terraform.ResourceProvider {
+	log.Printf("Terraform-Provider-CloudKarafka Version: %s", version)
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"apikey": &schema.Schema{
@@ -29,5 +36,7 @@ func Provider() *schema.Provider {
 }
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
-	return api.New(d.Get("baseurl").(string), d.Get("apikey").(string)), nil
+	useragent := fmt.Sprintf("terraform-provider-cloudkarafka_v%s", version)
+	log.Printf("[DEBUG] cloudkarafka::provider::configure useragent: %v", useragent)
+	return api.New(d.Get("baseurl").(string), d.Get("apikey").(string), useragent), nil
 }
