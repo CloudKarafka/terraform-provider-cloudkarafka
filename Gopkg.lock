@@ -177,15 +177,9 @@
 
 [[projects]]
   name = "github.com/hashicorp/hcl"
-  packages = [".","hcl/ast","hcl/parser","hcl/scanner","hcl/strconv","hcl/token","json/parser","json/scanner","json/token"]
+  packages = [".","hcl/ast","hcl/parser","hcl/scanner","hcl/strconv","hcl/token","json/parser","json/scanner","json/token","ext/dynblock","ext/typeexpr","gohcl","hcl","hcl/hclsyntax","hcl/json","hcldec","hclparse","hclwrite"]
   revision = "8cb6e5b959231cc1119e43259c4a608f9c51a241"
   version = "v1.0.0"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/hashicorp/hcl2"
-  packages = ["ext/dynblock","ext/typeexpr","gohcl","hcl","hcl/hclsyntax","hcl/json","hcldec","hclparse","hclwrite"]
-  revision = "66c59f909e254f6b1964ca17854b853b16b21f51"
 
 [[projects]]
   branch = "master"
