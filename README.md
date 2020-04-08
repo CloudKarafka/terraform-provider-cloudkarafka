@@ -7,7 +7,6 @@ Setup your CloudKarafka cluster with Terraform
 ```sh
 git clone https://github.com/cloudkarafka/terraform-provider.git
 cd terraform-provider
-make depupdate
 make init
 ```
 
