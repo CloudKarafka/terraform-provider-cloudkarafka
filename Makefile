@@ -33,9 +33,6 @@ help:
 clean:  ## Clean files
 	rm -f ~/.terraform.d/plugins/terraform-provider-cloudkarafka*
 
-depupdate:  ## Update all vendored dependencies
-	dep ensure -update
-
 release: ## Cross-compile release provider for different architecture
 	echo "Building linux-386"
 	GOOS=linux GOARCH=386 go build -o terraform-provider-cloudkarafka_v$(version)
