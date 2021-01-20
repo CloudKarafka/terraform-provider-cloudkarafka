@@ -55,13 +55,13 @@ release: ## Cross-compile release provider for different architecture
 
 	@echo "Building windows-386"
 	GOOS=windows GOARCH=386 go build -ldflags "$(GOLDFLAGS)" -o terraform-provider-cloudkarafka_v$(version).exe
-	tar -czvf terraform-provider-cloudkarafka_v$(version)_windows_386.tar.gz terraform-provider-cloudkarafka_v$(version)
+	tar -czvf terraform-provider-cloudkarafka_v$(version)_windows_386.tar.gz terraform-provider-cloudkarafka_v$(version).exe
 	mkdir -p $(CURDIR)/bin/release/windows/386
 	mv terraform-provider-cloudkarafka_v$(version)_windows_386.tar.gz bin/release/windows/386/
 
 	@echo "Building windows-amd64"
 	GOOS=windows GOARCH=amd64 go build -ldflags "$(GOLDFLAGS)" -o terraform-provider-cloudkarafka_v$(version).exe
-	tar -czvf terraform-provider-cloudkarafka_v$(version)_windows_amd64.tar.gz terraform-provider-cloudkarafka_v$(version)
+	tar -czvf terraform-provider-cloudkarafka_v$(version)_windows_amd64.tar.gz terraform-provider-cloudkarafka_v$(version).exe
 	mkdir -p $(CURDIR)/bin/release/windows/amd64
 	mv terraform-provider-cloudkarafka_v$(version)_windows_amd64.tar.gz bin/release/windows/amd64/
 
