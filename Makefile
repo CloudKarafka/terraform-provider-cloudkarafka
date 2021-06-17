@@ -71,7 +71,7 @@ build:  ## Build cloudkarafka provider
 
 install: build  ## Install cloudkarafka provider into terraform plugin directory
 	mkdir -p ~/.terraform.d/plugins
-	cp $(CURDIR)/terraform-provider-cloudkarafka_v$(version) ~/.terraform.d/plugins/
+	cp $(CURDIR)/terraform-provider-cloudkarafka_v$(version) ~/.terraform.d/plugins/github.com/cloudkarafka/terraform-provider-cloudkarafka/$(version)/$(GOOS)_$(GOARCH)/
 
 init: install  ## Run terraform init for local testing
 	terraform init

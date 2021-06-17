@@ -1,3 +1,11 @@
+terraform {
+  required_providers {
+    cloudkarafka = {
+      source = "github.com/cloudkarafka/terraform-provider-cloudkarafka"
+    }
+  }
+}
+
 provider "cloudkarafka" {}
 
 resource "cloudkarafka_instance" "kafka_bat" {
