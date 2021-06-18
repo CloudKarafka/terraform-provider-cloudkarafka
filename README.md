@@ -34,7 +34,7 @@ HOSTNAME/NAMESPACE/TYPE/VERSION/TARGET/terraform-provider-TYPE_VERSION
 
 So for an example system of linux with amd64 architecture and cloud karafka version 0.9.0, the expected path is :
 ```
-~/.terraform.d/plugins/github.com/cloudkarafka/cloudkarafka/0.9.0/linux_amd64/terraform-provider-cloudkarafka_v0.9.0
+~/.terraform.d/plugins/github.com/e-conomic/cloudkarafka/0.9.0/linux_amd64/terraform-provider-cloudkarafka_v0.9.0
 ```
 
 ## Cloud Karafka API
