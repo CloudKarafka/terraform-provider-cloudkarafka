@@ -70,8 +70,8 @@ build:  ## Build cloudkarafka provider
 	GOOS=$(GOOS) GOARCH=$(GOARCH) go build -ldflags "-X github.com/cloudkarafka/terraform-provider-cloudkarafka/cloudkarafka.version=$(version)" -o terraform-provider-cloudkarafka_v$(version)
 
 install: build  ## Install cloudkarafka provider into terraform plugin directory
-	mkdir -p ~/.terraform.d/plugins
-	cp $(CURDIR)/terraform-provider-cloudkarafka_v$(version) ~/.terraform.d/plugins/github.com/e-conomic/terraform-provider-cloudkarafka/$(version)/$(GOOS)_$(GOARCH)/
+	mkdir -p ~/.terraform.d/plugins/github.com/e-conomic/cloudkarafka/$(version)/$(GOOS)_$(GOARCH)/
+	cp $(CURDIR)/terraform-provider-cloudkarafka_v$(version) ~/.terraform.d/plugins/github.com/e-conomic/cloudkarafka/$(version)/$(GOOS)_$(GOARCH)/
 
 init: install  ## Run terraform init for local testing
 	terraform init
