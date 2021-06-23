@@ -3,9 +3,9 @@
 before:
   hooks:
     # You may remove this if you don't use go modules.
-    - go mod tidy
+        - go mod tidy
     # you may remove this if you don't need go generate
-    - go generate main.go
+        - go generate main.go
 builds:
   - env:
       - CGO_ENABLED=0
