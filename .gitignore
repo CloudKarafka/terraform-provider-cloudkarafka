@@ -4,3 +4,4 @@ terraform-provider-cloudkarafka
 .idea/
 *.iml
 vendor/
+dist/
