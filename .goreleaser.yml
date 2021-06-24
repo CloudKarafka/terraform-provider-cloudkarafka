@@ -30,3 +30,7 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
+release:
+  github:
+    owner: fayaz-abdul
+    name: https://github.com/e-conomic/terraform-provider-cloudkarafka
