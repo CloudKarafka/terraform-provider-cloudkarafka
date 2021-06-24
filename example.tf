@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     cloudkarafka = {
-      source = "github.com/cloudkarafka/terraform-provider-cloudkarafka"
+      source = "github.com/e-conomic/cloudkarafka"
     }
   }
 }
