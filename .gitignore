@@ -1,6 +1,12 @@
 .terraform/
 terraform.*
-terraform-provider-cloudkarafka
+terraform-provider-cloudkarafka*
 .idea/
 *.iml
 vendor/
+crash.log
+graph.png
+.DS_store
+bin/
+*.tar.gz
+dist/
