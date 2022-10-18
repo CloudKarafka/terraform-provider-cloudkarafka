@@ -5,13 +5,16 @@ import (
 	"log"
 
 	"github.com/84codes/go-api/api"
+	"github.com/cloudkarafka/terraform-provider-cloudkarafka/cloudkarafka/network/vpc"
+
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
 var version string
 
-func Provider() terraform.ResourceProvider {
+func Provider(v string) terraform.ResourceProvider {
+	version = v
 	log.Printf("Terraform-Provider-CloudKarafka Version: %s", version)
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
@@ -19,7 +22,7 @@ func Provider() terraform.ResourceProvider {
 				Type:        schema.TypeString,
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("CLOUDKARAFKA_APIKEY", nil),
-				Description: "Key used to authentication to the CloudKarafka API",
+				Description: "Key used to authentication to the CloudKarafka Customer API",
 			},
 			"baseurl": &schema.Schema{
 				Type:        schema.TypeString,
@@ -29,7 +32,8 @@ func Provider() terraform.ResourceProvider {
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"cloudkarafka_instance": resourceInstance(),
+			"cloudkarafka_instance":    ResourceInstance(),
+			"cloudkarafka_network_vpc": vpc.ResourceVpc(),
 		},
 		ConfigureFunc: providerConfigure,
 	}

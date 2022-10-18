@@ -6,10 +6,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
+var version string
+
 func main() {
 	plugin.Serve(&plugin.ServeOpts{
 		ProviderFunc: func() terraform.ResourceProvider {
-			return cloudkarafka.Provider()
+			return cloudkarafka.Provider(version)
 		},
 	})
 }
