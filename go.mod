@@ -2,7 +2,7 @@ module github.com/cloudkarafka/terraform-provider-cloudkarafka
 
 go 1.19
 
-require github.com/84codes/go-api v1.9.2
+require github.com/84codes/go-api v1.10.1
 
 require github.com/hashicorp/terraform-plugin-sdk v1.17.2
 
