@@ -1,230 +1,205 @@
 package cloudkarafka
 
 import (
-	"github.com/84codes/go-api/api"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
+	"context"
+	"fmt"
+	"regexp"
+	"terraform-provider-cloudkarafka/api"
+
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func ResourceInstance() *schema.Resource {
-	return &schema.Resource{
-		Create: ResourceCreate,
-		Read:   ResourceRead,
-		Update: ResourceUpdate,
-		Delete: ResourceDelete,
-		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
-		},
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "Name of the instance",
-			},
-			"plan": {
-				Type:         schema.TypeString,
-				Required:     true,
-				Description:  "Name of the plan",
-				ValidateFunc: validatePlanName(),
-			},
-			"region": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "Name of the region you want to create your instance in",
-			},
-			"tags": {
-				Type:     schema.TypeList,
-				Optional: true,
-				Computed: true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
+// Ensure the implementation satisfies the expected interfaces.
+var (
+	_ resource.Resource              = &instanceResource{}
+	_ resource.ResourceWithConfigure = &instanceResource{}
+	// _ resource.ResourceWithImportState = &instanceResource{}
+)
+
+// NewOrderResource is a helper function to simplify the provider implementation.
+func NewInstanceResource() resource.Resource {
+	return &instanceResource{}
+}
+
+// instanceResource is the resource implementation.
+type instanceResource struct {
+	client *api.API
+}
+
+type instanceResourceModel struct {
+	ID           types.Int64  `tfsdk:"id"`
+	Name         types.String `tfsdk:"name"`
+	Plan         types.String `tfsdk:"plan"`
+	Region       types.String `tfsdk:"region"`
+	KafkaVersion types.String `tfsdk:"kafka_version"`
+	VPCSubnet    types.String `tfsdk:"vpc_subnet"`
+	VPCId        types.Int64  `tfsdk:"vpc_id"`
+}
+
+// Metadata returns the data source type name.
+func (r *instanceResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_instance"
+}
+
+// Schema defines the schema for the data source.
+func (r *instanceResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description: "Manage an instance.",
+		Attributes: map[string]schema.Attribute{
+			"id": schema.Int64Attribute{
+				Description: "Instance ID.",
+				Computed:    true,
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
 				},
-				Description: "Tag the instances with optional tags",
 			},
-			"ca": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "Broker CA",
+			"name": schema.StringAttribute{
+				Description: "Name of instance.",
+				Required:    true,
 			},
-			"apikey": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Sensitive:   true,
-				Description: "API key for the CloudAMQP instance",
+			"plan": schema.StringAttribute{
+				Description: "What plan to use.",
+				Required:    true,
 			},
-			"brokers": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "Comma separated list of Kafka broker urls",
+			"region": schema.StringAttribute{
+				Description: "Which region to use.",
+				Required:    true,
+				Validators: []validator.String{
+					stringvalidator.RegexMatches(
+						regexp.MustCompile(`^(amazon-web-services|azure-arm|google-compute-engine)::[a-z0-9\-]+$`),
+						"must be a valid region identifier",
+					),
+				},
 			},
-			"username": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "Username for accessing the Kafka cluster",
+			"kafka_version": schema.StringAttribute{
+				Description: "Which Apache Kafka version to use.",
+				Required:    true,
 			},
-			"password": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Sensitive:   true,
-				Description: "Password for accessing the Kafka cluster",
-			},
-			"topic_prefix": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "",
-			},
-			"kafka_version": {
-				Type:        schema.TypeString,
+			"vpc_subnet": schema.StringAttribute{
+				Description: "Subnet for the VPC.",
 				Optional:    true,
-				Computed:    true,
-				Description: "Kafka version",
 			},
-			"vpc_id": {
-				Type:        schema.TypeInt,
+			"vpc_id": schema.Int64Attribute{
+				Description: "ID for which subnet to use.",
 				Optional:    true,
-				Computed:    true,
-				Description: "The ID of the VPC to create your instance in",
-			},
-			"vpc_subnet": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
-				ForceNew:    true,
-				Description: "Dedicated VPC subnet, shouldn't overlap with your current VPC's subnet",
-			},
-			"ready": {
-				Type:        schema.TypeBool,
-				Computed:    true,
-				Description: "Flag describing if the resource is ready",
-			},
-			"keep_associated_vpc": {
-				Type:        schema.TypeBool,
-				Optional:    true,
-				Default:     false,
-				Description: "Keep associated VPC when deleting instance",
 			},
 		},
 	}
 }
 
-func ResourceCreate(d *schema.ResourceData, meta interface{}) error {
-	var (
-		api    = meta.(*api.API)
-		keys   = instanceCreateAttributeKeys()
-		params = make(map[string]interface{})
-	)
-
-	for _, k := range keys {
-		if v := d.Get(k); v != nil || v != "" {
-			params[k] = v
-		}
-		// CloudAMQP supports through go-api to fetch default version.
-		// } else if k == "kafka_version" {
-		// 	version, _ := api.DefaultKafkaVersion()
-		// 	params[k] = version["default_kafka_version"]
-		// }
-
-		if k == "vpc_id" {
-			if d.Get(k).(int) == 0 {
-				delete(params, k)
-			}
-		}
-
-		if k == "vpc_subnet" {
-			if d.Get(k) == "" {
-				delete(params, k)
-			}
-		}
+// Configure adds the provider configured client to the data source.
+func (r *instanceResource) Configure(_ context.Context, req resource.ConfigureRequest, _ *resource.ConfigureResponse) {
+	if req.ProviderData == nil {
+		return
 	}
 
-	data, err := api.CreateInstance(params)
+	r.client = req.ProviderData.(*api.API)
+}
+
+// Create creates the resource and sets the initial Terraform state.
+func (r *instanceResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	// Retrieve values from plan
+	var plan instanceResourceModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	createRequest := api.CreateInstanceRequest{
+		Name:         plan.Name.ValueString(),
+		Plan:         plan.Plan.ValueString(),
+		Region:       plan.Region.ValueString(),
+		KafkaVersion: plan.KafkaVersion.ValueString(),
+	}
+	if !plan.VPCId.IsNull() {
+		createRequest.VpcId = plan.VPCId.ValueInt64()
+	} else {
+		if !plan.VPCSubnet.IsNull() {
+			createRequest.VpcSubnet = plan.VPCSubnet.ValueString()
+		}
+	}
+	instance, err := r.client.CreateInstance(createRequest)
 	if err != nil {
-		return err
+		resp.Diagnostics.AddError("Error creating instance", err.Error())
+		return
 	}
 
-	d.SetId(data["id"].(string))
-	return ResourceRead(d, meta)
+	plan.ID = types.Int64Value(instance.Id)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		tflog.Error(ctx, fmt.Sprintf("created diag failed"))
+	}
 }
 
-func ResourceRead(d *schema.ResourceData, meta interface{}) error {
-	api := meta.(*api.API)
-	data, err := api.ReadInstance(d.Id())
+// Read refreshes the Terraform state with the latest data.
+func (r *instanceResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	// Get current state
+	var state instanceResourceModel
+	diags := req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	_, err := r.client.ReadInstance(state.ID.ValueInt64())
 	if err != nil {
-		return err
+		resp.Diagnostics.AddError("Failed to read instance state", err.Error())
+		return
 	}
 
-	for k, v := range data {
-		if validateInstanceJsonFields(k) {
-			switch k {
-			case "vpc":
-				err = d.Set("vpc_id", v.(map[string]interface{})["id"])
-				err = d.Set("vpc_subnet", v.(map[string]interface{})["subnet"])
-			default:
-				d.Set(k, v)
-			}
-		}
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
-
-	return nil
 }
 
-func ResourceUpdate(d *schema.ResourceData, meta interface{}) error {
+// Update updates the resource and sets the updated Terraform state on success.
+func (r *instanceResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var (
-		api    = meta.(*api.API)
-		keys   = []string{"name", "plan", "tags"}
-		params = make(map[string]interface{})
+		plan *instanceResourceModel
 	)
-
-	for _, k := range keys {
-		params[k] = d.Get(k)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	return api.UpdateInstance(d.Id(), params)
-}
-
-func ResourceDelete(d *schema.ResourceData, meta interface{}) error {
-	api := meta.(*api.API)
-	return api.DeleteInstance(d.Id(), d.Get("keep_associated_vpc").(bool))
-}
-
-func validateInstanceJsonFields(key string) bool {
-	switch key {
-	case "name",
-		"plan",
-		"region",
-		"tags",
-		"vpc",
-		"ca",
-		"apikey",
-		"brokers",
-		"username",
-		"password",
-		"topic_prefix",
-		"kafka_version",
-		"ready":
-		return true
+	err := r.client.UpdateInstance(plan.ID.ValueInt64(), api.UpdateInstanceRequest{
+		Name: plan.Name.ValueString(),
+		Plan: plan.Plan.ValueString(),
+	})
+	if err != nil {
+		resp.Diagnostics.AddError("Error updating instance", err.Error())
+		return
 	}
-	return false
-}
 
-func instanceCreateAttributeKeys() []string {
-	return []string{
-		"name",
-		"plan",
-		"region",
-		"tags",
-		"kafka_version",
-		"vpc_subnet",
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 }
 
-func validatePlanName() schema.SchemaValidateFunc {
-	return validation.StringInSlice([]string{
-		"ducky",
-		"mouse-1", "mouse-3", "mouse-5", "mouse-7",
-		"bat-1", "bat-3", "bat-5", "bat-7",
-		"fox-1", "fox-3", "fox-5", "fox-7",
-		"lion-1", "lion-3", "lion-5", "lion-7",
-		"penguin-1", "penguin-3", "penguin-5", "penguin-7",
-	}, true)
+// Delete deletes the resource and removes the Terraform state on success.
+func (r *instanceResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	// Retrieve values from state
+	var state instanceResourceModel
+	diags := req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	return
+}
+
+func (r *instanceResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	// Retrieve import ID and save to id attribute
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
