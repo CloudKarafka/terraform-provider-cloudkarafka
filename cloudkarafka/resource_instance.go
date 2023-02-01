@@ -14,15 +14,16 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource              = &instanceResource{}
-	_ resource.ResourceWithConfigure = &instanceResource{}
-	// _ resource.ResourceWithImportState = &instanceResource{}
+	_ resource.Resource                = &instanceResource{}
+	_ resource.ResourceWithConfigure   = &instanceResource{}
+	_ resource.ResourceWithImportState = &instanceResource{}
 )
 
 // NewOrderResource is a helper function to simplify the provider implementation.
@@ -39,6 +40,7 @@ type instanceResourceModel struct {
 	ID           types.Int64  `tfsdk:"id"`
 	Name         types.String `tfsdk:"name"`
 	Plan         types.String `tfsdk:"plan"`
+	DiskSize     types.Int64  `tfsdk:"disk_size"`
 	Region       types.String `tfsdk:"region"`
 	KafkaVersion types.String `tfsdk:"kafka_version"`
 	VPCSubnet    types.String `tfsdk:"vpc_subnet"`
@@ -70,6 +72,11 @@ func (r *instanceResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Description: "What plan to use.",
 				Required:    true,
 			},
+			"disk_size": schema.Int64Attribute{
+				Description: "Disk size for each broker.",
+				Optional:    true,
+				Validators:  []validator.Int64{int64validator.AtLeast(128)},
+			},
 			"region": schema.StringAttribute{
 				Description: "Which region to use.",
 				Required:    true,
@@ -83,6 +90,12 @@ func (r *instanceResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			"kafka_version": schema.StringAttribute{
 				Description: "Which Apache Kafka version to use.",
 				Required:    true,
+				Validators: []validator.String{
+					stringvalidator.RegexMatches(
+						regexp.MustCompile(`^\d+\.\d+\.\d+$`),
+						"Version must be of format X.X.X",
+					),
+				},
 			},
 			"vpc_subnet": schema.StringAttribute{
 				Description: "Subnet for the VPC.",
@@ -172,8 +185,9 @@ func (r *instanceResource) Update(ctx context.Context, req resource.UpdateReques
 	}
 
 	err := r.client.UpdateInstance(plan.ID.ValueInt64(), api.UpdateInstanceRequest{
-		Name: plan.Name.ValueString(),
-		Plan: plan.Plan.ValueString(),
+		Name:     plan.Name.ValueString(),
+		Plan:     plan.Plan.ValueString(),
+		DiskSize: plan.DiskSize.ValueInt64(),
 	})
 	if err != nil {
 		resp.Diagnostics.AddError("Error updating instance", err.Error())

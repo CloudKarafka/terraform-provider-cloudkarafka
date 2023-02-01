@@ -43,7 +43,7 @@ func (p *cloudkarafkaProvider) Schema(_ context.Context, _ provider.SchemaReques
 		Description: "Interact with Cloudkarafka.",
 		Attributes: map[string]schema.Attribute{
 			"apikey": schema.StringAttribute{
-				Description: "API keyr Cloudkarafka API.",
+				Description: "API key Cloudkarafka API.",
 				Required:    true,
 			},
 		},
@@ -91,12 +91,9 @@ func (p *cloudkarafkaProvider) Configure(ctx context.Context, req provider.Confi
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	tflog.Debug(ctx, "Creating Cloudkarafka client")
 	client := api.New(host, apikey)
 	resp.DataSourceData = client
 	resp.ResourceData = client
-	tflog.Info(ctx, "Configured Cloudkarafka client", map[string]any{"success": true})
 }
 
 // DataSources defines the data sources implemented in the provider.
@@ -108,5 +105,6 @@ func (p *cloudkarafkaProvider) DataSources(_ context.Context) []func() datasourc
 func (p *cloudkarafkaProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewInstanceResource,
+		NewTopicResource,
 	}
 }

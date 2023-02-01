@@ -1,33 +1,27 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/dghubble/sling"
 )
 
-type Json map[string]interface{}
+type Hash map[string]interface{}
 
 type API struct {
 	client *sling.Sling
 }
 
 type APIError struct {
-	Message string `json:"error"`
-}
-
-func (e APIError) Error() string {
-	return e.Message
-}
-
-type APIErrors struct {
+	Message  string              `json:"error"`
 	Messages []map[string]string `json:"errors"`
 }
 
-func (e APIErrors) Error() string {
+func (e APIError) Error() string {
+	if e.Message != "" {
+		return e.Message
+	}
 	for _, m := range e.Messages {
-		fmt.Println("[INFO] aaaaaaaaaaa", m)
 		for _, v := range m {
 			return v
 		}

@@ -41,9 +41,9 @@ type CreateInstanceRequest struct {
 }
 
 type UpdateInstanceRequest struct {
-	Name string   `json:"name"`
-	Tags []string `json:"tags"`
-	Plan string   `json:"plan"`
+	Name     string `json:"name"`
+	Plan     string `json:"plan"`
+	DiskSize int64  `json:"disk_size"`
 }
 
 func (api *API) waitUntilReady(id int64) error {
@@ -51,7 +51,7 @@ func (api *API) waitUntilReady(id int64) error {
 	for {
 		time.Sleep(10 * time.Second)
 		path := fmt.Sprintf("api/instances/%d/cluster/status", id)
-		_, err := api.client.New().Path(path).ReceiveSuccess(&data)
+		_, err := api.client.New().Get(path).ReceiveSuccess(&data)
 		if err != nil {
 			return err
 		}
@@ -65,7 +65,7 @@ func (api *API) readInstance(id int64) (InstanceResponse, error) {
 	var data InstanceResponse
 	var error APIError
 	path := fmt.Sprintf("api/instances/%d", id)
-	response, err := api.client.New().Path(path).Receive(&data, &error)
+	response, err := api.client.New().Get(path).Receive(&data, &error)
 	if err != nil {
 		return InstanceResponse{}, err
 	}
@@ -81,7 +81,7 @@ func (api *API) readInstance(id int64) (InstanceResponse, error) {
 func (api *API) CreateInstance(req CreateInstanceRequest) (InstanceResponse, error) {
 	var (
 		data   map[string]interface{}
-		failed APIErrors
+		failed APIError
 	)
 	resp := InstanceResponse{}
 
@@ -114,7 +114,7 @@ func (api *API) ReadInstance(id int64) (InstanceResponse, error) {
 }
 
 func (api *API) UpdateInstance(id int64, data UpdateInstanceRequest) error {
-	var failed APIErrors
+	var failed APIError
 	path := fmt.Sprintf("api/instances/%d", id)
 	response, err := api.client.New().Put(path).BodyJSON(data).Receive(nil, &failed)
 	if err != nil {
