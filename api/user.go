@@ -9,10 +9,10 @@ type User struct {
 	Type string `json:"type"`
 }
 
-func (api *API) ReadUser(instanceId int, name string) (*User, error) {
+func (api *API) ReadUser(instanceId int64, name string) (*User, error) {
 	var (
 		data   []User
-		failed interface{}
+		failed APIError
 	)
 	path := fmt.Sprintf("/api/instances/%d/users", instanceId)
 	_, err := api.client.New().Get(path).Receive(&data, &failed)
@@ -27,22 +27,28 @@ func (api *API) ReadUser(instanceId int, name string) (*User, error) {
 	return nil, fmt.Errorf("user %s not found", name)
 }
 
-func (api *API) CreateUser(instanceId int, params User) error {
-	var (
-		data   interface{}
-		failed interface{}
-	)
+func (api *API) CreateUser(instanceId int64, params User) error {
+	var failed APIError
 	path := fmt.Sprintf("/api/instances/%d/users", instanceId)
-	_, err := api.client.New().Post(path).BodyJSON(params).Receive(&data, &failed)
-	return err
+	resp, err := api.client.New().Post(path).BodyJSON(params).Receive(nil, &failed)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != 201 {
+		return failed
+	}
+	return nil
 }
 
-func (api *API) DeleteUser(instanceId int, name string) error {
-	var (
-		data   interface{}
-		failed interface{}
-	)
+func (api *API) DeleteUser(instanceId int64, name string) error {
+	var failed APIError
 	path := fmt.Sprintf("/api/instances/%d/users/%s", instanceId, name)
-	_, err := api.client.New().Delete(path).Receive(&data, &failed)
-	return err
+	resp, err := api.client.New().Delete(path).Receive(nil, &failed)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != 200 {
+		return failed
+	}
+	return nil
 }

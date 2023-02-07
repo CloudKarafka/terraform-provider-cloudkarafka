@@ -19,7 +19,6 @@ type UpdateTopicRequest struct {
 }
 
 func (api *API) waitUntilTopicReady(instanceId int64, topic string) error {
-	times := 0
 	for {
 		time.Sleep(5 * time.Second)
 		topic, err := api.readTopic(instanceId, topic)
@@ -28,10 +27,6 @@ func (api *API) waitUntilTopicReady(instanceId int64, topic string) error {
 		}
 		if topic.Status == "ready" {
 			return nil
-		}
-		times += 1
-		if times > 36 {
-			return fmt.Errorf("Something appears to be failing waiting on topic %s to be created, please contact support", topic)
 		}
 	}
 }
@@ -42,11 +37,15 @@ func (api *API) readTopics(instanceId int64) ([]Topic, error) {
 		failed APIError
 	)
 	path := fmt.Sprintf("/api/instances/%d/topics", instanceId)
-	_, err := api.client.New().Get(path).Receive(&data, &failed)
+	resp, err := api.client.New().Get(path).Receive(&data, &failed)
 	if err != nil {
 		return nil, err
 	}
-	return data, failed
+	if resp.StatusCode != 200 {
+		return nil, failed
+	}
+	return data, nil
+
 }
 
 func (api *API) readTopic(instanceId int64, name string) (*Topic, error) {
@@ -85,19 +84,25 @@ func (api *API) CreateTopic(instanceId int64, params Topic) error {
 func (api *API) UpdateTopic(instanceId int64, name string, params UpdateTopicRequest) error {
 	var failed APIError
 	path := fmt.Sprintf("/api/instances/%d/topics/%s", instanceId, name)
-	_, err := api.client.New().Put(path).BodyJSON(params).Receive(nil, &failed)
+	resp, err := api.client.New().Put(path).BodyJSON(params).Receive(nil, &failed)
 	if err != nil {
 		return err
 	}
-	return failed
+	if resp.StatusCode != 200 {
+		return failed
+	}
+	return nil
 }
 
 func (api *API) DeleteTopic(instanceId int64, name string) error {
 	var failed APIError
 	path := fmt.Sprintf("/api/instances/%d/topics/%s", instanceId, name)
-	_, err := api.client.New().Delete(path).Receive(nil, &failed)
+	resp, err := api.client.New().Delete(path).Receive(nil, &failed)
 	if err != nil {
 		return err
 	}
-	return failed
+	if resp.StatusCode != 200 {
+		return failed
+	}
+	return nil
 }

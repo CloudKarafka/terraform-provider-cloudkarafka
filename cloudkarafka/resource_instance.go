@@ -209,6 +209,11 @@ func (r *instanceResource) Delete(ctx context.Context, req resource.DeleteReques
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	err := r.client.DeleteInstance(state.ID.ValueInt64(), false)
+	if err != nil {
+		resp.Diagnostics.AddError("Error deleting instance", err.Error())
+		return
+	}
 
 	return
 }

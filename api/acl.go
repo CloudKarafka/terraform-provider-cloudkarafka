@@ -5,58 +5,64 @@ import (
 )
 
 type AclRule struct {
-	Id              int    `json:"id"`
-	User            string `json:"user"`
-	Operation       string `json:"operation"`
-	Resource        string `json:"resource"`
-	ResourcePattern string `json:"resource_pattern"`
+	Id                  int64  `json:"id"`
+	User                string `json:"name"`
+	Operation           string `json:"operation"`
+	Resource            string `json:"resource"`
+	ResourcePattern     string `json:"resource_pattern"`
+	CreatedAt           string `json:"created_at"`
+	ResourcePatternType string `json:"resource_pattern_type"`
 }
 
-func (api *API) ReadAclRule(instanceId int, user, operation, resource, resourcePattern string) (*AclRule, error) {
+func (api *API) ReadAclRuleForUser(instanceId int64, user string) ([]AclRule, error) {
 	var (
 		data   []AclRule
-		failed interface{}
+		failed APIError
 	)
 	path := fmt.Sprintf("/api/instances/%d/acls", instanceId)
-	_, err := api.client.New().Get(path).Receive(&data, &failed)
+	resp, err := api.client.New().Get(path).Receive(&data, &failed)
 	if err != nil {
 		return nil, err
 	}
+	if resp.StatusCode != 200 {
+		return nil, failed
+	}
+	var res []AclRule
 	for _, v := range data {
-		if v.User == user && v.Operation == operation &&
-			v.Resource == resource && v.ResourcePattern == resourcePattern {
-			return &v, nil
+		if v.User == user {
+			res = append(res, v)
 		}
 	}
-	return nil, fmt.Errorf("rule not found")
+	return res, nil
 }
 
-type CreateAclRule struct {
-	Operation       string `json:"operation"`
-	Resource        string `json:"resource"`
-	ResourcePattern string `json:"resource_pattern"`
-}
-type CreateAclRuleParams struct {
-	User  string          `json:"user"`
-	Rules []CreateAclRule `json:"rules"`
-}
-
-func (api *API) CreateAclRule(instanceId int, params CreateAclRuleParams) error {
-	var (
-		data   interface{}
-		failed interface{}
-	)
+func (api *API) CreateAclRules(instanceId int64, user string, params []AclRule) error {
+	var failed APIError
 	path := fmt.Sprintf("/api/instances/%d/acls", instanceId)
-	_, err := api.client.New().Post(path).BodyJSON(params).Receive(&data, &failed)
-	return err
+	body := map[string]interface{}{
+		"user":  user,
+		"rules": params,
+	}
+	resp, err := api.client.New().Post(path).BodyJSON(body).Receive(nil, &failed)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != 201 {
+		return failed
+	}
+	return nil
+
 }
 
-func (api *API) DeleteAclRule(instanceId int, id int) error {
-	var (
-		data   interface{}
-		failed interface{}
-	)
+func (api *API) DeleteAclRule(instanceId int64, id int64) error {
+	var failed APIError
 	path := fmt.Sprintf("/api/instances/%d/acls/%d", instanceId, id)
-	_, err := api.client.New().Delete(path).Receive(&data, &failed)
-	return err
+	resp, err := api.client.New().Delete(path).Receive(nil, &failed)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != 200 {
+		return failed
+	}
+	return nil
 }

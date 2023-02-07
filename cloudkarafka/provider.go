@@ -106,5 +106,7 @@ func (p *cloudkarafkaProvider) Resources(_ context.Context) []func() resource.Re
 	return []func() resource.Resource{
 		NewInstanceResource,
 		NewTopicResource,
+		NewUserResource,
+		NewAclResource,
 	}
 }
