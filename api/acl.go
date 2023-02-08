@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -14,7 +15,14 @@ type AclRule struct {
 	ResourcePatternType string `json:"resource_pattern_type"`
 }
 
-func (api *API) ReadAclRuleForUser(instanceId int64, user string) ([]AclRule, error) {
+func (r *AclRule) Same(other *AclRule) bool {
+	return r.User == other.User &&
+		r.Operation == other.Operation && r.Resource == other.Resource &&
+		r.ResourcePattern == other.ResourcePattern &&
+		r.ResourcePatternType == r.ResourcePatternType
+}
+
+func (api *API) readAclRules(instanceId int64) ([]AclRule, error) {
 	var (
 		data   []AclRule
 		failed APIError
@@ -27,31 +35,47 @@ func (api *API) ReadAclRuleForUser(instanceId int64, user string) ([]AclRule, er
 	if resp.StatusCode != 200 {
 		return nil, failed
 	}
-	var res []AclRule
-	for _, v := range data {
-		if v.User == user {
-			res = append(res, v)
-		}
-	}
-	return res, nil
+	return data, nil
 }
 
-func (api *API) CreateAclRules(instanceId int64, user string, params []AclRule) error {
+func (api *API) ReadAclRule(instanceId int64, id int64) (*AclRule, error) {
+	data, err := api.readAclRules(instanceId)
+	if err != nil {
+		return nil, err
+	}
+	for _, v := range data {
+		if v.Id == id {
+			return &v, nil
+		}
+	}
+	return nil, fmt.Errorf("No rule found with id=%d", id)
+}
+
+func (api *API) CreateAclRule(instanceId int64, user string, rule AclRule) (int64, error) {
 	var failed APIError
 	path := fmt.Sprintf("/api/instances/%d/acls", instanceId)
 	body := map[string]interface{}{
 		"user":  user,
-		"rules": params,
+		"rules": []AclRule{rule},
 	}
 	resp, err := api.client.New().Post(path).BodyJSON(body).Receive(nil, &failed)
 	if err != nil {
-		return err
+		return -1, err
 	}
 	if resp.StatusCode != 201 {
-		return failed
+		return -1, failed
 	}
-	return nil
-
+	data, err := api.readAclRules(instanceId)
+	if err != nil {
+		return -1, err
+	}
+	rule.User = user
+	for _, v := range data {
+		if v.Same(&rule) {
+			return v.Id, nil
+		}
+	}
+	return -1, errors.New("Failed to create rule")
 }
 
 func (api *API) DeleteAclRule(instanceId int64, id int64) error {

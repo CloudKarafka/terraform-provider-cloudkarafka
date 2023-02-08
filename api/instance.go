@@ -35,15 +35,17 @@ type CreateInstanceRequest struct {
 	Plan         string   `json:"plan"`
 	Region       string   `json:"region"`
 	Tags         []string `json:"tags,omitempty"`
+	DiskSize     int64    `json:"disk_size"`
 	KafkaVersion string   `json:"kafka_version"`
 	VpcId        int64    `json:"vpc_id,omitempty"`
 	VpcSubnet    string   `json:"vpc_subnet,omitempty"`
 }
 
 type UpdateInstanceRequest struct {
-	Name     string `json:"name"`
-	Plan     string `json:"plan"`
-	DiskSize int64  `json:"disk_size"`
+	Name     string   `json:"name"`
+	Tags     []string `json:"tags"`
+	Plan     string   `json:"plan"`
+	DiskSize int64    `json:"disk_size"`
 }
 
 func (api *API) waitUntilReady(id int64) error {

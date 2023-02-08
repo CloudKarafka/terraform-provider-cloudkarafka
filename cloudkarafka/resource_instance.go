@@ -37,14 +37,15 @@ type instanceResource struct {
 }
 
 type instanceResourceModel struct {
-	ID           types.Int64  `tfsdk:"id"`
-	Name         types.String `tfsdk:"name"`
-	Plan         types.String `tfsdk:"plan"`
-	DiskSize     types.Int64  `tfsdk:"disk_size"`
-	Region       types.String `tfsdk:"region"`
-	KafkaVersion types.String `tfsdk:"kafka_version"`
-	VPCSubnet    types.String `tfsdk:"vpc_subnet"`
-	VPCId        types.Int64  `tfsdk:"vpc_id"`
+	ID           types.Int64    `tfsdk:"id"`
+	Name         types.String   `tfsdk:"name"`
+	Plan         types.String   `tfsdk:"plan"`
+	Tags         []types.String `tfsdk:"tags"`
+	DiskSize     types.Int64    `tfsdk:"disk_size"`
+	Region       types.String   `tfsdk:"region"`
+	KafkaVersion types.String   `tfsdk:"kafka_version"`
+	VPCSubnet    types.String   `tfsdk:"vpc_subnet"`
+	VPCId        types.Int64    `tfsdk:"vpc_id"`
 }
 
 // Metadata returns the data source type name.
@@ -76,6 +77,11 @@ func (r *instanceResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Description: "Disk size for each broker.",
 				Optional:    true,
 				Validators:  []validator.Int64{int64validator.AtLeast(128)},
+			},
+			"tags": schema.SetAttribute{
+				Description: "Instance tags.",
+				ElementType: types.StringType,
+				Optional:    true,
 			},
 			"region": schema.StringAttribute{
 				Description: "Which region to use.",
@@ -127,11 +133,17 @@ func (r *instanceResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
+	var tags []string
+	for _, t := range plan.Tags {
+		tags = append(tags, t.ValueString())
+	}
 	createRequest := api.CreateInstanceRequest{
 		Name:         plan.Name.ValueString(),
 		Plan:         plan.Plan.ValueString(),
 		Region:       plan.Region.ValueString(),
 		KafkaVersion: plan.KafkaVersion.ValueString(),
+		DiskSize:     plan.DiskSize.ValueInt64(),
+		Tags:         tags,
 	}
 	if !plan.VPCId.IsNull() {
 		createRequest.VpcId = plan.VPCId.ValueInt64()
@@ -162,11 +174,18 @@ func (r *instanceResource) Read(ctx context.Context, req resource.ReadRequest, r
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	_, err := r.client.ReadInstance(state.ID.ValueInt64())
+	instance, err := r.client.ReadInstance(state.ID.ValueInt64())
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to read instance state", err.Error())
 		return
 	}
+	var tags []types.String
+	for _, t := range instance.Tags {
+		tags = append(tags, types.StringValue(t))
+	}
+	state.Name = types.StringValue(instance.Name)
+	state.Tags = tags
+	state.Plan = types.StringValue(instance.Plan)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
@@ -184,10 +203,15 @@ func (r *instanceResource) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
+	var tags []string
+	for _, t := range plan.Tags {
+		tags = append(tags, t.ValueString())
+	}
 	err := r.client.UpdateInstance(plan.ID.ValueInt64(), api.UpdateInstanceRequest{
 		Name:     plan.Name.ValueString(),
 		Plan:     plan.Plan.ValueString(),
 		DiskSize: plan.DiskSize.ValueInt64(),
+		Tags:     tags,
 	})
 	if err != nil {
 		resp.Diagnostics.AddError("Error updating instance", err.Error())

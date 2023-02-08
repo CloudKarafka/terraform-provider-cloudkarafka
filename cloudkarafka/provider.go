@@ -45,6 +45,7 @@ func (p *cloudkarafkaProvider) Schema(_ context.Context, _ provider.SchemaReques
 			"apikey": schema.StringAttribute{
 				Description: "API key Cloudkarafka API.",
 				Required:    true,
+				Sensitive:   true,
 			},
 		},
 	}
