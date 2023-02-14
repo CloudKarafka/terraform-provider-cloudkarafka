@@ -160,15 +160,28 @@ func (r *configResource) Read(ctx context.Context, req resource.ReadRequest, res
 		resp.Diagnostics.AddError("Failed to read kafka config", err.Error())
 		return
 	}
-
 	state.AutoCreateTopics = types.BoolValue(config.AutoCreateTopics)
-	state.MinInsyncReplicas = types.Int64Value(config.MinInsyncReplicas)
-	state.IOThreads = types.Int64Value(config.IOThreads)
-	state.NetworkThreads = types.Int64Value(config.NetworkThreads)
-	state.LogRetentionBytes = types.Int64Value(config.LogRetentionBytes)
-	state.LogRetentionMs = types.Int64Value(config.LogRetentionMs)
-	state.LogSegmentBytes = types.Int64Value(config.LogSegmentBytes)
-	state.MessageMaxBytes = types.Int64Value(config.MessageMaxBytes)
+	if config.MinInsyncReplicas != -1 {
+		state.MinInsyncReplicas = types.Int64Value(config.MinInsyncReplicas)
+	}
+	if config.IOThreads != -1 {
+		state.IOThreads = types.Int64Value(config.IOThreads)
+	}
+	if config.NetworkThreads != -1 {
+		state.NetworkThreads = types.Int64Value(config.NetworkThreads)
+	}
+	if config.LogRetentionBytes != -1 {
+		state.LogRetentionBytes = types.Int64Value(config.LogRetentionBytes)
+	}
+	if config.LogRetentionMs != -1 {
+		state.LogRetentionMs = types.Int64Value(config.LogRetentionMs)
+	}
+	if config.LogSegmentBytes != -1 {
+		state.LogSegmentBytes = types.Int64Value(config.LogSegmentBytes)
+	}
+	if config.MessageMaxBytes != -1 {
+		state.MessageMaxBytes = types.Int64Value(config.MessageMaxBytes)
+	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 	if resp.Diagnostics.HasError() {

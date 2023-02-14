@@ -72,7 +72,7 @@ func (api *API) ReadConfig(instanceId int64) (*KafkaConfig, error) {
 	if resp.StatusCode != 200 {
 		return nil, failed
 	}
-	cfg := new(KafkaConfig)
+	cfg := NewKafkaConfig()
 	for _, r := range data {
 		switch r["name"] {
 		case "auto.create.topics.enable":

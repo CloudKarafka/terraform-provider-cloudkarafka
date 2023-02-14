@@ -14,10 +14,8 @@ Interact with Cloudkarafka.
 
 ```terraform
 # Configuration-based authentication
-provider "hashicups" {
-  username = "education"
-  password = "test123"
-  host     = "http://localhost:19090"
+provider "cloudkarafka" {
+  apikey= "YOUR_API_KEY"
 }
 ```
 
@@ -26,4 +24,4 @@ provider "hashicups" {
 
 ### Required
 
-- `apikey` (String) API keyr Cloudkarafka API.
+- `apikey` (String, Sensitive) API key Cloudkarafka API.
