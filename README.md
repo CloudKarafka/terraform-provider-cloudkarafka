@@ -1,10 +1,12 @@
 # Terraform provider for CloudKarafka
 
+Available here: https://registry.terraform.io/providers/CloudKarafka/cloudkarafka/latest
+
 ## Development
 
 First tell Terraform to use the local build of the provider
 
-in `~/terraformrc` put this
+in `~/.terraformrc` put this
 
 ```
 dev_overrides {
@@ -18,5 +20,5 @@ This will tell terraform to look in that directly for a binary called `terraform
 To build that binary
 
 ``` shell
-make
+go build
 ```
