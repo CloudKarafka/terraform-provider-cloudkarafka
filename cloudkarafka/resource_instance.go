@@ -95,7 +95,7 @@ func (r *instanceResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			},
 			"kafka_version": schema.StringAttribute{
 				Description: "Which Apache Kafka version to use.",
-				Required:    true,
+				Optional:    true,
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(
 						regexp.MustCompile(`^\d+\.\d+\.\d+$`),
