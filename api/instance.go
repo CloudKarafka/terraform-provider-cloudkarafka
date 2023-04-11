@@ -12,7 +12,7 @@ type ClusterStatus struct {
 }
 
 type VPC struct {
-	Id     int    `json:"id"`
+	Id     int64  `json:"id"`
 	Subnet string `json:"subnet"`
 }
 

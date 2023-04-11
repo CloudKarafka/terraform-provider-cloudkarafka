@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
@@ -106,10 +107,18 @@ func (r *instanceResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			"vpc_subnet": schema.StringAttribute{
 				Description: "Subnet for the VPC.",
 				Optional:    true,
+				Computed:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"vpc_id": schema.Int64Attribute{
 				Description: "ID for which subnet to use.",
 				Optional:    true,
+				Computed:    true,
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.RequiresReplace(),
+				},
 			},
 		},
 	}
@@ -145,13 +154,12 @@ func (r *instanceResource) Create(ctx context.Context, req resource.CreateReques
 		DiskSize:     plan.DiskSize.ValueInt64(),
 		Tags:         tags,
 	}
-	if !plan.VPCId.IsNull() {
+	if plan.VPCId.ValueInt64() != 0 {
 		createRequest.VpcId = plan.VPCId.ValueInt64()
-	} else {
-		if !plan.VPCSubnet.IsNull() {
-			createRequest.VpcSubnet = plan.VPCSubnet.ValueString()
-		}
+	} else if !plan.VPCSubnet.IsNull() {
+		createRequest.VpcSubnet = plan.VPCSubnet.ValueString()
 	}
+
 	instance, err := r.client.CreateInstance(createRequest)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating instance", err.Error())
@@ -159,6 +167,9 @@ func (r *instanceResource) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	plan.ID = types.Int64Value(instance.Id)
+	plan.VPCId = types.Int64Value(instance.Vpc.Id)
+	plan.VPCSubnet = types.StringValue(instance.Vpc.Subnet)
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		tflog.Error(ctx, fmt.Sprintf("created diag failed"))
@@ -186,6 +197,8 @@ func (r *instanceResource) Read(ctx context.Context, req resource.ReadRequest, r
 	state.Name = types.StringValue(instance.Name)
 	state.Tags = tags
 	state.Plan = types.StringValue(instance.Plan)
+	state.VPCSubnet = types.StringValue(instance.Vpc.Subnet)
+	state.VPCId = types.Int64Value(int64(instance.Vpc.Id))
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
