@@ -5,9 +5,9 @@ go 1.19
 require (
 	github.com/dghubble/sling v1.4.1
 	github.com/hashicorp/terraform-plugin-docs v0.13.0
-	github.com/hashicorp/terraform-plugin-framework v1.2.0
+	github.com/hashicorp/terraform-plugin-framework v1.3.1
 	github.com/hashicorp/terraform-plugin-framework-validators v0.10.0
-	github.com/hashicorp/terraform-plugin-log v0.8.0
+	github.com/hashicorp/terraform-plugin-log v0.9.0
 )
 
 require (
