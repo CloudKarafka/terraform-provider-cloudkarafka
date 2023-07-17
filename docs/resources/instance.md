@@ -29,7 +29,6 @@ resource "cloudkarafka_instance" "cluster" {
 
 ### Required
 
-- `kafka_version` (String) Which Apache Kafka version to use.
 - `name` (String) Name of instance.
 - `plan` (String) What plan to use.
 - `region` (String) Which region to use.
@@ -37,6 +36,7 @@ resource "cloudkarafka_instance" "cluster" {
 ### Optional
 
 - `disk_size` (Number) Disk size for each broker.
+- `kafka_version` (String) Which Apache Kafka version to use.
 - `tags` (Set of String) Instance tags.
 - `vpc_id` (Number) ID for which subnet to use.
 - `vpc_subnet` (String) Subnet for the VPC.
