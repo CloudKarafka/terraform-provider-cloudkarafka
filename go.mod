@@ -3,7 +3,7 @@ module terraform-provider-cloudkarafka
 go 1.19
 
 require (
-	github.com/dghubble/sling v1.4.1
+	github.com/dghubble/sling v1.4.2
 	github.com/hashicorp/terraform-plugin-docs v0.16.0
 	github.com/hashicorp/terraform-plugin-framework v1.3.5
 	github.com/hashicorp/terraform-plugin-framework-validators v0.12.0
