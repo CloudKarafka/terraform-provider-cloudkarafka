@@ -2,6 +2,9 @@
 
 Available here: https://registry.terraform.io/providers/CloudKarafka/cloudkarafka/latest
 
+> [!WARNING]  
+> The CloudKarafka service will reach its [End of Life on January 27, 2025](https://www.cloudkarafka.com/blog/end-of-life-announcement.html).
+
 ## Development
 
 First tell Terraform to use the local build of the provider
